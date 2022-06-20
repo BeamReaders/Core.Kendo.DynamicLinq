@@ -29,11 +29,8 @@ Supported platforms:
 Full changelog: https://github.com/linmasaki/Kendo.DynamicLinqCore/blob/master/CHANGELOG.md
 
     </PackageReleaseNotes>
-    <PackageProjectUrl>https://github.com/linmasaki/Kendo.DynamicLinqCore</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/linmasaki/Kendo.DynamicLinqCore</RepositoryUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/linmasaki/CoCoPackageIcon/master/cocodotnet64.png</PackageIconUrl>
-    <PackageIcon>Icon.png</PackageIcon>
-    <PackageTags>netcore netstandard kendo kendo-ui linq dynamic</PackageTags>
+    <PackageProjectUrl>https://github.com/BeamReaders/Kendo.DynamicLinqCore</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/BeamReaders/Kendo.DynamicLinqCore</RepositoryUrl>
     <PackageVersion>3.1.1</PackageVersion>
     <Version>3.1.1</Version>
     <Copyright>Copyright © 2017-2020 CoCo Lin</Copyright>
