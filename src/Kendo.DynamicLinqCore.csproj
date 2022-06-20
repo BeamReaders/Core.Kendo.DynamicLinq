@@ -37,7 +37,6 @@ Full changelog: https://github.com/linmasaki/Kendo.DynamicLinqCore/blob/master/C
     <PackageVersion>3.1.1</PackageVersion>
     <Version>3.1.1</Version>
     <Copyright>Copyright © 2017-2020 CoCo Lin</Copyright>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
