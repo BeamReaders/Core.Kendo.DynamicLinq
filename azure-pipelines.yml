@@ -1,0 +1,62 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+
+
+trigger:
+- master
+
+stages:
+- stage: Build
+  jobs:
+  - job: 'Build_Library'
+    displayName: Build LIbrary
+    continueOnError: false
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+      - checkout: self
+        persistCredentials: true
+
+      - task: gitversion/setup@0
+        displayName: 'Install GitTools'
+        inputs:
+          versionSpec: '5.x'
+
+      - task: gitversion/execute@0
+        displayName: 'Calculate SemVer'
+        inputs:
+          updateAssemblyInfo: true
+
+      - script: echo current version is $(GitVersion.SemVer)
+        displayName: 'Display calculated version'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Building Library'
+        inputs:
+          command: 'build'
+          configuration: 'Release'
+          projects: '$(Build.SourcesDirectory)/StorageManager/StorageManager/*.csproj'
+          outputDir: '$(build.artifactStagingDirectory)'
+  
+      - task: DotNetCoreCLI@2
+        displayName: 'Packaging library'
+        inputs:
+          command: 'pack'
+          packagesToPack: '$(Build.SourcesDirectory)/StorageManager/StorageManager/*.csproj'
+          versioningScheme: byEnvVar
+          versionEnvVar: 'GitVersion.SemVer'
+          
+      - task: NuGetCommand@2
+        inputs:
+          command: 'push'
+          packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+          nuGetFeedType: 'internal'
+          publishVstsFeed: '49373f7b-23ae-4046-9014-c95642c91809'
+          allowPackageConflicts: true
