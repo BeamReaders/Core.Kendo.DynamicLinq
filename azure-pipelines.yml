@@ -42,14 +42,14 @@ stages:
         inputs:
           command: 'build'
           configuration: 'Release'
-          projects: '$(Build.SourcesDirectory)/Core.Kendo.DynamicLinq/src/*.csproj'
+          projects: '$(Build.SourcesDirectory)/src/*.csproj'
           outputDir: '$(build.artifactStagingDirectory)'
   
       - task: DotNetCoreCLI@2
         displayName: 'Packaging library'
         inputs:
           command: 'pack'
-          packagesToPack: '$(Build.SourcesDirectory)/Core.Kendo.DynamicLinq/src/*.csproj'
+          packagesToPack: '$(Build.SourcesDirectory)/src/*.csproj'
           versioningScheme: byEnvVar
           versionEnvVar: 'GitVersion.SemVer'
           
