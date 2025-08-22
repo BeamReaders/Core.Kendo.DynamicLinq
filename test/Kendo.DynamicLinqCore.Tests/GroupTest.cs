@@ -1,31 +1,22 @@
-using NUnit.Framework;
 using System.Linq.Dynamic.Core;
+using FluentAssertions;
 using Kendo.DynamicLinqCore.Tests.Data;
-
-#if NETCOREAPP3_1
-using System.Text.Json;
-#else
 using Newtonsoft.Json;
-#endif
+using Xunit;
 
 namespace Kendo.DynamicLinqCore.Tests
 {
-    [TestFixture]
-    public class GroupTest
+    public class GroupTest: IClassFixture<MockContext>
     {
         private MockContext _dbContext;
 
-        #if NETCOREAPP3_1
-        private JsonSerializerOptions jsonSerializerOptions = CustomJsonSerializerOptions.DefaultOptions;
-        #endif
 
-        [SetUp]
-        public void Setup()
+        public GroupTest(MockContext mockContext)
         {
-            _dbContext = MockContext.GetDefaultInMemoryDbContext();
+            _dbContext = mockContext;// MockContext.GetDefaultInMemoryDbContext();
         }
 
-        [Test]
+        [Fact]
         public void DataSourceRequest_EnumField_GroupedCount()
         {
             // source string = {"take":20,"skip":0,"sort":[{"field":"Number","dir":"desc"}],"group":[{"field":"Gender"}]}
@@ -38,7 +29,7 @@ namespace Kendo.DynamicLinqCore.Tests
 
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(request);
             var groupItems = result.Groups.ToDynamicList().Count;
-            Assert.AreEqual(3, groupItems);
+            groupItems.Should().Be(3);
         }
 
     }

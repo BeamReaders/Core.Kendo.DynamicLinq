@@ -25,9 +25,10 @@ namespace Kendo.DynamicLinqCore.Tests.Data
             return _defaultDbContext;
         }
 
-        public MockContext(DbContextOptions<MockContext> options) : base(options)
+        public MockContext() : base((new DbContextOptionsBuilder<MockContext>().UseLazyLoadingProxies().UseInMemoryDatabase("Kendo")).Options)
         {
 
+            this.Database.EnsureCreated();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

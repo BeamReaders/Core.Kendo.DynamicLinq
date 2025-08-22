@@ -1,23 +1,14 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using Kendo.DynamicLinqCore.Tests.Data;
-
-#if NETCOREAPP3_1
-using System.Text.Json;
-#else
+using Xunit;
+using FluentAssertions;
 using Newtonsoft.Json;
-#endif
 
 namespace Kendo.DynamicLinqCore.Tests
 {
-    [TestFixture]
-    public class AggregatorTest
+    public class AggregatorTest : IClassFixture<MockContext>
     {
         private MockContext _dbContext;
-
-        #if NETCOREAPP3_1
-        private static JsonSerializerOptions jsonSerializerOptions = CustomJsonSerializerOptions.DefaultOptions;
-        #endif
 
         public static IEnumerable<DataSourceRequest> DataSourceRequestWithAggregateSalarySum
         {
@@ -43,13 +34,12 @@ namespace Kendo.DynamicLinqCore.Tests
             }
         }
 
-        [SetUp]
-        public void Setup()
+        public AggregatorTest(MockContext mockContext)
         {
-            _dbContext = MockContext.GetDefaultInMemoryDbContext();
+            _dbContext = mockContext;// MockContext.GetDefaultInMemoryDbContext();
         }
 
-        [Test]
+        [Fact]
         public void InputParameter_DecimalSum_CheckResultObjectString()
         {
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(10, 0, null, null, new[]
@@ -62,33 +52,40 @@ namespace Kendo.DynamicLinqCore.Tests
             }, null);
 
             object expectedObject = "{ Salary = { sum = 14850 } }";
-            Assert.AreEqual(expectedObject, result.Aggregates.ToString());
+            expectedObject.Should().BeEquivalentTo(result.Aggregates.ToString());
         }
 
-        [TestCaseSource(nameof(DataSourceRequestWithAggregateSalarySum))]
-        public void InputDataSourceRequest_DecimalSum_CheckResultObjectString(DataSourceRequest dataSourceRequest)
+        [Theory]
+        [InlineData("{\"take\":10,\"skip\":0,\"aggregate\":[{\"field\":\"Salary\",\"aggregate\":\"sum\"}]}")]
+        public void InputDataSourceRequest_DecimalSum_CheckResultObjectString(string filters)
         {
+            DataSourceRequest dataSourceRequest = JsonConvert.DeserializeObject<DataSourceRequest>(filters);
+
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(dataSourceRequest);
 
             object expectedObject = "{ Salary = { sum = 14850 } }";
-            Assert.AreEqual(expectedObject, result.Aggregates.ToString());
+            expectedObject.Should().BeEquivalentTo(result.Aggregates.ToString());
         }
 
-        [TestCaseSource(nameof(DataSourceRequestWithAggregateSalarySum))]
-        public void InputDataSourceRequest_DecimalSum_CheckResultSum(DataSourceRequest dataSourceRequest)
+        [Theory]
+        [InlineData("{\"take\":10,\"skip\":0,\"aggregate\":[{\"field\":\"Salary\",\"aggregate\":\"sum\"}]}")]
+
+        public void InputDataSourceRequest_DecimalSum_CheckResultSum(string filters)
         {
+            DataSourceRequest dataSourceRequest = JsonConvert.DeserializeObject<DataSourceRequest>(filters);
+
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(dataSourceRequest);
             var salaryAggregates = result.Aggregates.GetType().GetProperty("Salary")?.GetValue(result.Aggregates, null);
             var salarySum = salaryAggregates?.GetType().GetProperty("sum")?.GetValue(salaryAggregates, null);
 
             const decimal expectedSalarySum = 14850;
-            Assert.AreEqual(expectedSalarySum, salarySum);
+            expectedSalarySum.Should().Be((decimal)salarySum);
 
             const decimal incorrectSalarySum = 9999;
-            Assert.AreNotEqual(incorrectSalarySum, salarySum);
+            incorrectSalarySum.Should().NotBe((decimal)salarySum);
         }
 
-        [Test]
+        [Fact]
         public void InputParameter_ManyAggregators_CheckResultObjectString()
         {
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(10, 0, null, null, new[]
@@ -111,16 +108,19 @@ namespace Kendo.DynamicLinqCore.Tests
             }, null);
 
             object expectedObject = "{ Salary = { sum = 14850, average = 2970 }, Number = { max = 6 } }";
-            Assert.AreEqual(expectedObject, result.Aggregates.ToString());
+            expectedObject.Should().BeEquivalentTo(result.Aggregates.ToString());
         }
 
-        [TestCaseSource(nameof(DataSourceRequestWithManyAggregates))]
-        public void InputDataSourceRequest_ManyAggregators_CheckResultObjectString(DataSourceRequest dataSourceRequest)
+        [Theory]
+        [InlineData("{\"take\":10,\"skip\":0,\"aggregate\":[{\"field\":\"Salary\",\"aggregate\":\"sum\"},{\"field\":\"Salary\",\"aggregate\":\"average\"},{\"field\":\"Number\",\"aggregate\":\"max\"}]}")]
+        public void InputDataSourceRequest_ManyAggregators_CheckResultObjectString(string filters)
         {
+            DataSourceRequest dataSourceRequest = JsonConvert.DeserializeObject<DataSourceRequest>(filters);
+
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(dataSourceRequest);
 
             object expectedObject = "{ Salary = { sum = 14850, average = 2970 }, Number = { max = 6 } }";
-            Assert.AreEqual(expectedObject, result.Aggregates.ToString());
+            expectedObject.Should().BeEquivalentTo(result.Aggregates.ToString());
         }
     }
 }

@@ -1,46 +1,38 @@
-using NUnit.Framework;
 using Kendo.DynamicLinqCore.Tests.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-
-#if NETCOREAPP3_1
-using System.Text.Json;
-#else
+using FluentAssertions;
+using Xunit;
 using Newtonsoft.Json;
-#endif
 
 
 namespace Kendo.DynamicLinqCore.Tests
 {
-    [TestFixture]
-    public class FilterTest
+    public class FilterTest : IClassFixture<MockContext>
     {
         private MockContext _dbContext;
 
-        #if NETCOREAPP3_1
-        private JsonSerializerOptions jsonSerializerOptions = CustomJsonSerializerOptions.DefaultOptions;
-        #endif
-
-        [SetUp]
-        public void Setup()
+        public FilterTest(MockContext mockContext)
         {
-            _dbContext = MockContext.GetDefaultInMemoryDbContext();
+            _dbContext = mockContext;// MockContext.GetDefaultInMemoryDbContext();
         }
 
-        [Test]
+        [Fact]
         public void InputParameter_SubPropertyContains_CheckResultCount()
         {
-            var result = _dbContext.Employee.Include(x=>x.Company).AsQueryable().ToDataSourceResult(10, 0, null, new Filter {
-                Field ="Company.Name",
+            var result = _dbContext.Employee.Include(x => x.Company).AsQueryable().ToDataSourceResult(10, 0, null, new Filter
+            {
+                Field = "Company.Name",
                 Value = "Microsoft",
                 Operator = "contains",
                 Logic = "and"
             });
 
-            Assert.AreEqual(2, result.Total);
+            result.Total.Should().Be(2);
 
-            var result2 = _dbContext.Employee.AsQueryable().ToDataSourceResult(10, 0, null, new Filter {
-                Filters = new []
+            var result2 = _dbContext.Employee.AsQueryable().ToDataSourceResult(10, 0, null, new Filter
+            {
+                Filters = new[]
                 {
                     new Filter
                     {
@@ -52,52 +44,40 @@ namespace Kendo.DynamicLinqCore.Tests
                 Logic = "and"
             });
 
-            Assert.AreEqual(2, result2.Total);
+            result2.Total.Should().Be(2);
         }
 
-        [Test]
+        [Fact]
         public void InputDataSourceRequest_DecimalGreaterAndLess_CheckResultCount()
         {
             // source string = {"take":20,"skip":0,"filter":{"logic":"and","filters":[{"field":"Salary","operator":"gt","value":999.00},{"field":"Salary","operator":"lt","value":6000.00}]}}
 
-            #if NETCOREAPP3_1
-                var request = JsonSerializer.Deserialize<DataSourceRequest>("{\"take\":20,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gt\",\"value\":999.00},{\"field\":\"Salary\",\"operator\":\"lt\",\"value\":6000.00}]}}", jsonSerializerOptions);
-            #else
-                var request = JsonConvert.DeserializeObject<DataSourceRequest>("{\"take\":20,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gt\",\"value\":999.00},{\"field\":\"Salary\",\"operator\":\"lt\",\"value\":6000.00}]}}");
-            #endif
+            var request = JsonConvert.DeserializeObject<DataSourceRequest>("{\"take\":20,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gt\",\"value\":999.00},{\"field\":\"Salary\",\"operator\":\"lt\",\"value\":6000.00}]}}");
 
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(request);
-            Assert.AreEqual(4, result.Total);
+            result.Total.Should().Be(4);
         }
 
-        [Test]
+        [Fact]
         public void InputDataSourceRequest_DoubleGreaterAndLessEqual_CheckResultCount()
         {
             // source string = {"take":20,"skip":0,"filter":{"logic":"and","filters":[{"field":"Weight","operator":"gt","value":48},{"field":"Weight","operator":"lt","value":69.2}]}}
 
-            #if NETCOREAPP3_1
-                var request = JsonSerializer.Deserialize<DataSourceRequest>("{\"take\":20,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"field\":\"Weight\",\"operator\":\"gt\",\"value\":48},{\"field\":\"Weight\",\"operator\":\"lte\",\"value\":69.2}]}}", jsonSerializerOptions);
-            #else
-                var request = JsonConvert.DeserializeObject<DataSourceRequest>("{\"take\":20,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"field\":\"Weight\",\"operator\":\"gt\",\"value\":48},{\"field\":\"Weight\",\"operator\":\"lte\",\"value\":69.2}]}}");
-            #endif
+            var request = JsonConvert.DeserializeObject<DataSourceRequest>("{\"take\":20,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"field\":\"Weight\",\"operator\":\"gt\",\"value\":48},{\"field\":\"Weight\",\"operator\":\"lte\",\"value\":69.2}]}}");
 
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(request);
-            Assert.AreEqual(3, result.Total);
+            result.Total.Should().Be(3);
         }
 
-        [Test]
+        [Fact]
         public void InputDataSourceRequest_ManyConditions_CheckResultCount()
         {
             // source string = {\"take\":10,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"logic\":\"or\",\"filters\":[{\"field\":\"Birthday\",\"operator\":\"eq\",\"value\":\"1986-10-09T16:00:00.000Z\"},{\"field\":\"Birthday\",\"operator\":\"eq\",\"value\":\"1976-11-05T16:00:00.000Z\"}]},{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gte\",\"value\":1000},{\"field\":\"Salary\",\"operator\":\"lte\",\"value\":6000}]}]}}
 
-            #if NETCOREAPP3_1
-                var request = JsonSerializer.Deserialize<DataSourceRequest>("{\"take\":10,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"logic\":\"or\",\"filters\":[{\"field\":\"Birthday\",\"operator\":\"eq\",\"value\":\"1986-10-09T16:00:00.000Z\"},{\"field\":\"Birthday\",\"operator\":\"eq\",\"value\":\"1976-11-05T16:00:00.000Z\"}]},{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gte\",\"value\":1000},{\"field\":\"Salary\",\"operator\":\"lte\",\"value\":6000}]}]}}", jsonSerializerOptions);            
-            #else
-                var request = JsonConvert.DeserializeObject<DataSourceRequest>("{\"take\":10,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"logic\":\"or\",\"filters\":[{\"field\":\"Birthday\",\"operator\":\"eq\",\"value\":\"1986-10-09T16:00:00.000Z\"},{\"field\":\"Birthday\",\"operator\":\"eq\",\"value\":\"1976-11-05T16:00:00.000Z\"}]},{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gte\",\"value\":1000},{\"field\":\"Salary\",\"operator\":\"lte\",\"value\":6000}]}]}}");
-            #endif
+            var request = JsonConvert.DeserializeObject<DataSourceRequest>("{\"take\":10,\"skip\":0,\"filter\":{\"logic\":\"and\",\"filters\":[{\"logic\":\"and\",\"filters\":[{\"field\":\"Birthday\",\"operator\":\"lt\",\"value\":\"1986-10-11T16:00:00.000Z\"},{\"field\":\"Birthday\",\"operator\":\"gt\",\"value\":\"1976-11-05T16:00:00.000Z\"}]},{\"logic\":\"and\",\"filters\":[{\"field\":\"Salary\",\"operator\":\"gte\",\"value\":1000},{\"field\":\"Salary\",\"operator\":\"lte\",\"value\":6000}]}]}}");
 
             var result = _dbContext.Employee.AsQueryable().ToDataSourceResult(request);
-            Assert.AreEqual(2, result.Total);
+            result.Total.Should().Be(2);
         }
 
     }
